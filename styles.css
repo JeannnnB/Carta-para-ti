@@ -50,12 +50,15 @@ body{
   color:#1a1f36; font-weight:600; padding:.9rem 1.1rem; border-radius:12px;
   box-shadow:0 8px 24px var(--shadow);
   transition:transform .15s ease, box-shadow .2s ease, filter .2s ease;
+  position: relative;             /* iOS: asegurar capa superior */
+  z-index: 3;                     /* iOS: por encima de cualquier overlay */
+  pointer-events: auto;
 }
 .open-btn:hover{transform:translateY(-1px); box-shadow:0 12px 28px var(--shadow)}
 .open-btn:active{transform:translateY(0)}
 .hint{color:#cfd6ff; opacity:.7; font-size:.95rem; text-align:center}
 
-/* SOBRE (ahora sí, sobre real con pliegues y sello) */
+/* SOBRE (sobre real con pliegues y sello) */
 .envelope{
   position:relative; width:min(92vw,680px); height:420px;
   perspective:1200px;
@@ -73,7 +76,7 @@ body{
   box-shadow:0 18px 50px rgba(0,0,0,.45), inset 0 0 0 1px rgba(0,0,0,.12);
 }
 
-/* pliegues laterales (triángulos sutiles) */
+/* pliegues laterales */
 .pocket::before, .pocket::after{
   content:""; position:absolute; top:22%; bottom:6%;
   width:55%; background:linear-gradient(180deg,#e2e8ff,#d7defc);
@@ -107,10 +110,11 @@ body{
   box-shadow: 0 2px 8px rgba(0,0,0,.15), inset 0 0 0 1px rgba(0,0,0,.1);
   z-index:2;
   animation: seal-pulse 2.8s ease-in-out infinite;
+  pointer-events: none;           /* iOS: no bloquea toques */
 }
 @keyframes seal-pulse{
   0%,100%{ transform: translate(-50%,-50%) scale(1); box-shadow: 0 2px 8px rgba(0,0,0,.15), 0 0 0 0 rgba(138,160,255,.0); }
-  50%{ transform: translate(-50%,-50%) scale(1.03); box-shadow: 0 2px 8px rgba(0,0,0,.15), 0 0 18px 8px rgba(138,160,255,.12); }
+  50%{ transform: translate(-50%,-50%) scale(1.03); box-shadow: 0 2px 8px rgba(0,0,0,.15), 0 0 18px 8px rgba(138,160,255,.18); }
 }
 .envelope.open .seal{ opacity:0; transition: opacity .35s ease; }
 
@@ -125,16 +129,13 @@ body{
   opacity:0; transition:opacity .5s ease, transform .7s cubic-bezier(.2,.8,.2,1);
 }
 .letter:focus{outline:2px dashed #8aa0ff; outline-offset:4px}
-
 .letter__header h1{
   font-family: Cardo, Georgia, serif;
   font-weight:400; margin:0 0 .25rem 0; color:#0f1220;
 }
 .muted{color:var(--muted); margin:0 0 1rem 0; font-size:.95rem}
 .letter__body{line-height:1.7; font-size:1.05rem; white-space:pre-wrap; position:relative}
-.whisper{
-  opacity:0; margin-top:14px; font-style:italic; color:#555; transition: opacity .6s ease;
-}
+.whisper{ opacity:0; margin-top:14px; font-style:italic; color:#555; transition: opacity .6s ease; }
 
 /* Estado abierto + halo */
 .envelope.open .flap{ transform:rotateX(-165deg) }
@@ -147,7 +148,7 @@ body{
 }
 @keyframes env-glow{
   0%{ box-shadow:0 18px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.08), 0 0 0 0 rgba(138,160,255,0.0); }
-  40%{ box-shadow:0 18px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.08), 0 0 60px 10px rgba(138,160,255,.18); }
+  40%{ box-shadow:0 18px 60px rgba(0,0,0,.55), 0 0 60px 10px rgba(138,160,255,.18); }
   100%{ box-shadow:0 18px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.08), 0 0 0 0 rgba(138,160,255,0.0); }
 }
 
