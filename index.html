@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Carta para ti</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cardo:ital@0;1&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="description" content="Una carta desde el corazón, presentada de una forma distinta."/>
+</head>
+<body>
+  <main class="stage" aria-label="Carta animada">
+    <!-- Fondo con grano sutil y estrellas -->
+    <div class="sky" aria-hidden="true">
+      <canvas id="stars"></canvas>
+      <div class="grain"></div>
+    </div>
+
+    <!-- Contenido -->
+    <section class="card-wrap">
+      <button class="open-btn" id="openBtn" aria-expanded="false" aria-controls="envelope" title="Abrir carta">
+       Púlsame mona 🌙
+      </button>
+
+      <div class="envelope" id="envelope" role="region" aria-live="polite" aria-label="Sobre con carta">
+        <div class="flap"></div>
+        <div class="pocket"></div>
+
+        <article class="letter" id="letter" tabindex="0" aria-label="Contenido de la carta">
+          <header class="letter__header">
+            <h1>Donde te recuerdo</h1>
+            <p class="muted">De Jean Michael</p>
+          </header>
+
+          <div class="letter__body" id="letterBody">
+            <!-- El contenido se inserta por JS con efecto de tipeo -->
+          </div>
+
+          <footer class="letter__footer">
+            <div class="controls">
+              <button id="replay" class="ghost-btn" title="Reproducir de nuevo">Reproducir de nuevo</button>
+                          
+             
+            </div>
+          </footer>
+        </article>
+      </div>
+
+      <p class="hint">♥</p>
+    </section>
+  </main>
+
+  <noscript>
+    <style>
+      .open-btn{display:none}
+      .letter{opacity:1;transform:none}
+    </style>
+    <div style="max-width:680px;margin:2rem auto;padding:1rem;border:1px solid #ddd;background:#fff">
+      <h2>Carta (versión sin animaciones)</h2>
+      <p>
+        A veces me pregunto si el tiempo realmente borra o solo enseña a vivir con lo que uno lleva dentro...
+      </p>
+    </div>
+  </noscript>
+
+  <script src="script.js"></script>
+</body>
+</html>
