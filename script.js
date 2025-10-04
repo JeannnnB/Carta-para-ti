@@ -1,170 +1,368 @@
-:root{
-  --bg-1:#0e1014;        /* noche */
-  --bg-2:#12151b;
-  --paper:#fffaf3;       /* papel cálido */
-  --ink:#1c1c1c;
-  --accent:#8aa0ff;      /* azul tenue */
-  --muted:#7b7b7b;
-  --shadow:rgba(0,0,0,.35);
-  --edge:#cfd7ff;
+/* ================== TEXTO DE LA CARTA ================== */
+const LETTER_TEXT = `A veces me pregunto si el tiempo realmente borra o solo enseña a vivir con lo que uno lleva dentro. 
+Ha pasado más de un año, y aun así, hay días en los que mi mente vuelve a ti sin avisar. No sé si es por costumbre 
+o porque, sinceramente, no he encontrado un lugar donde me sienta tan tranquilo como cuando estaba contigo.
+
+Me he dado cuenta de que, aunque la vida siga y las responsabilidades nos llenen los días, hay personas que simplemente 
+dejan huellas que no se borran. Tú fuiste, y sigues siendo, ese rincón de calma que aparecía incluso en los momentos 
+más caóticos. A tu lado, todo tenía sentido, y cada instante —por pequeño que fuera— se sentía como si el mundo 
+se detuviera un poco para darnos un respiro.
+
+A veces cierro los ojos y me veo ahí, contigo, riendo, hablando de cualquier cosa, o simplemente en silencio, 
+sintiendo que no hacía falta nada más. Y entonces entiendo que ese era mi lugar seguro, el que no se busca, 
+sino que se encuentra una vez y se recuerda toda la vida.
+
+No te escribo para que volvamos, ni para remover el pasado. Te escribo porque, de algún modo, siento que parte de mí 
+sigue allá contigo, y necesitaba reconocerlo. Porque aunque el tiempo haya pasado, mi cariño por ti sigue siendo genuino, 
+tranquilo, y lleno de gratitud por todo lo que compartimos.
+
+Ojalá estés bien, de verdad. Y si alguna vez piensas en mí, espero que lo hagas con la misma paz y ternura 
+con la que yo sigo pensando en ti.
+
+Con todo mi corazón,
+Jean Michael`;
+
+/* ================== REFERENCIAS DEL DOM ================== */
+const openBtn = document.getElementById('openBtn');
+const envelope = document.getElementById('envelope');
+const letter = document.getElementById('letter');
+const letterBody = document.getElementById('letterBody');
+const replayBtn = document.getElementById('replay');
+
+/* si no existe un sello, créalo */
+(() => {
+  if (envelope && !document.querySelector('.seal')) {
+    const seal = document.createElement('div');
+    seal.className = 'seal';
+    envelope.appendChild(seal);
+  }
+})();
+
+/* ================== TIPEO (lento, con pausas seguras) ================== */
+const TYPE_SPEED_MS = 55;          // Ajusta para más lento/rápido
+const PARAGRAPH_PAUSE_MS = 500;    // Pausa extra al final de cada párrafo
+const WHISPER_TEXT = 'Al final, todo sigue siendo por ti 🌙';
+
+let typingTimeout = null;
+let typedIndex = 0;
+let whisperEl = null;
+
+function clearTypingTimers(){
+  if (typingTimeout) { clearTimeout(typingTimeout); typingTimeout = null; }
 }
 
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;
-  font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
-  color:#f6f7fb;
-  background: radial-gradient(1200px 800px at 60% -10%, var(--bg-2), var(--bg-1));
-  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+function resetLetter(){
+  clearTypingTimers();
+  typedIndex = 0;
+  letterBody.textContent = '';
+  if (whisperEl){ whisperEl.remove(); whisperEl = null; }
 }
 
-.stage{min-height:100vh; display:grid; place-items:center; position:relative; overflow:hidden}
+function getParagraphBreakIndices(text){
+  const breaks = [];
+  const rx = /\r?\n\r?\n/g;
+  let m;
+  while ((m = rx.exec(text)) !== null){
+    breaks.push(m.index + m[0].length);
+  }
+  return new Set(breaks);
+}
+const paragraphBreaks = getParagraphBreakIndices(LETTER_TEXT);
 
-/* Cielo, estrellas y luz de luna */
-.sky { position:absolute; inset:0; z-index:0; pointer-events:none; }
-#stars { position:absolute; inset:0; width:100%; height:100%; display:block; }
-.sky::before{
-  content:""; position:absolute; width:70vmax; height:70vmax; border-radius:50%;
-  background:radial-gradient(closest-side, rgba(200,220,255,.16), rgba(200,220,255,0));
-  left: -20vmax; top: -10vmax; filter: blur(2px);
-  animation: moon-drift 36s linear infinite;
-  opacity:.7;
-}
-@keyframes moon-drift{
-  0%{ transform: translate3d(0,0,0); }
-  50%{ transform: translate3d(12vmax, 6vmax, 0); }
-  100%{ transform: translate3d(0,0,0); }
-}
-.grain{
-  position:absolute; inset:0; mix-blend-mode:overlay; opacity:.35;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.06'/%3E%3C/svg%3E");
+function showWhisper(){
+  whisperEl = document.createElement('div');
+  whisperEl.className = 'whisper';
+  whisperEl.textContent = WHISPER_TEXT;
+  letterBody.appendChild(whisperEl);
+  requestAnimationFrame(()=> { whisperEl.style.opacity = 1; });
 }
 
-/* Contenido */
-.card-wrap{position:relative; z-index:1; display:grid; place-items:center; gap:1rem; padding:2rem}
-
-.open-btn{
-  appearance:none; border:none; cursor:pointer;
-  background:linear-gradient(180deg,#ffffff,#f0f3ff);
-  color:#1a1f36; font-weight:600; padding:.9rem 1.1rem; border-radius:12px;
-  box-shadow:0 8px 24px var(--shadow);
-  transition:transform .15s ease, box-shadow .2s ease, filter .2s ease;
-}
-.open-btn:hover{transform:translateY(-1px); box-shadow:0 12px 28px var(--shadow)}
-.open-btn:active{transform:translateY(0)}
-.hint{color:#cfd6ff; opacity:.7; font-size:.95rem; text-align:center}
-
-/* SOBRE (ahora sí, sobre real con pliegues y sello) */
-.envelope{
-  position:relative; width:min(92vw,680px); height:420px;
-  perspective:1200px;
-  will-change: transform;
-  transition: transform .12s ease-out;
-  transform-style: preserve-3d;
-}
-.pocket, .flap{
-  position:absolute; inset:0; border-radius:14px; backface-visibility:hidden;
+function stepType(){
+  letterBody.textContent = LETTER_TEXT.slice(0, typedIndex++);
+  if (typedIndex > LETTER_TEXT.length){
+    typingTimeout = setTimeout(showWhisper, 450);
+    return;
+  }
+  const isParagraphEnd = paragraphBreaks.has(typedIndex);
+  const delay = isParagraphEnd ? PARAGRAPH_PAUSE_MS : TYPE_SPEED_MS;
+  typingTimeout = setTimeout(stepType, delay);
 }
 
-/* base del sobre */
-.pocket{
-  background:linear-gradient(180deg,#e9edff 0%, #dfe5ff 100%);
-  box-shadow:0 18px 50px rgba(0,0,0,.45), inset 0 0 0 1px rgba(0,0,0,.12);
+function startTyping(){
+  clearTypingTimers();
+  typedIndex = 0;
+  letterBody.textContent = '';
+  if (whisperEl){ whisperEl.remove(); whisperEl = null; }
+  typingTimeout = setTimeout(stepType, TYPE_SPEED_MS);
 }
 
-/* pliegues laterales (triángulos sutiles) */
-.pocket::before, .pocket::after{
-  content:""; position:absolute; top:22%; bottom:6%;
-  width:55%; background:linear-gradient(180deg,#e2e8ff,#d7defc);
-  filter: brightness(0.98);
+/* ================== EVENTO UNIVERSAL (fix iPhone) ================== */
+const OPEN_EVT = window.PointerEvent ? 'pointerup' :
+                 ('ontouchend' in window ? 'touchend' : 'click');
+
+let lastTap = 0;
+function handleOpen(e){
+  const now = Date.now();
+  if (now - lastTap < 350) return; // evita doble-disparo (touch + click)
+  lastTap = now;
+
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
+
+  const opened = envelope.classList.toggle('open');
+  openBtn.setAttribute('aria-expanded', opened ? 'true' : 'false');
+  if (opened) {
+    startTyping();
+    setTimeout(()=> letter.focus(), 900);
+    // "pop" sutil
+    targetTZ = MAX_TZ;
+    setTimeout(()=> targetTZ = 0, 600);
+  } else {
+    resetLetter();
+  }
 }
-.pocket::before{
-  left:0; clip-path: polygon(0 0, 100% 50%, 0 100%);
-  box-shadow: inset -1px 0 0 rgba(0,0,0,.06);
-}
-.pocket::after{
-  right:0; clip-path: polygon(100% 0, 0 50%, 100% 100%);
-  box-shadow: inset 1px 0 0 rgba(0,0,0,.06);
+openBtn.addEventListener(OPEN_EVT, handleOpen, { passive: true });
+openBtn.addEventListener('click', handleOpen, { passive: true }); // fallback
+
+/* Reproducir de nuevo */
+if (replayBtn){
+  const handleReplay = (e)=>{
+    const now = Date.now();
+    if (now - lastTap < 300) return;
+    lastTap = now;
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+
+    resetLetter();
+    if (!envelope.classList.contains('open')) envelope.classList.add('open');
+    startTyping();
+  };
+  const REPLAY_EVT = window.PointerEvent ? 'pointerup' :
+                     ('ontouchend' in window ? 'touchend' : 'click');
+  replayBtn.addEventListener(REPLAY_EVT, handleReplay, { passive:true });
+  replayBtn.addEventListener('click', handleReplay, { passive:true });
 }
 
-/* aleta superior */
-.flap{
-  transform-origin:top center;
-  transform:rotateX(0deg);
-  background:linear-gradient(180deg,#dfe5ff,#c9d4ff);
-  clip-path:polygon(0 0, 100% 0, 50% 62%);
-  transition:transform .7s cubic-bezier(.2,.8,.2,1);
-  box-shadow:0 18px 50px rgba(0,0,0,.45);
-}
+/* Auto-open por query ?open=1 */
+(function(){
+  const params = new URLSearchParams(location.search);
+  if (params.get('open') === '1'){
+    envelope.classList.add('open');
+    setTimeout(startTyping, 500);
+  }
+})();
 
-/* sello circular */
-.seal{
-  position:absolute; left:50%; top:38%;
-  transform: translate(-50%, -50%);
-  width:64px; height:64px; border-radius:50%;
-  background: radial-gradient(circle at 30% 30%, #fff, #e6ecff);
-  box-shadow: 0 2px 8px rgba(0,0,0,.15), inset 0 0 0 1px rgba(0,0,0,.1);
-  z-index:2;
-  animation: seal-pulse 2.8s ease-in-out infinite;
-}
-@keyframes seal-pulse{
-  0%,100%{ transform: translate(-50%,-50%) scale(1); box-shadow: 0 2px 8px rgba(0,0,0,.15), 0 0 0 0 rgba(138,160,255,.0); }
-  50%{ transform: translate(-50%,-50%) scale(1.03); box-shadow: 0 2px 8px rgba(0,0,0,.15), 0 0 18px 8px rgba(138,160,255,.12); }
-}
-.envelope.open .seal{ opacity:0; transition: opacity .35s ease; }
+/* ================== CIELO: ESTRELLAS + COMETA + LOOP ÚNICO ================== */
+(function(){
+  const canvas = document.getElementById('stars');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d', { alpha: true });
 
-/* Hoja de carta */
-.letter{
-  position:absolute; left:50%; top:58%;
-  transform:translate(-50%,-50%) translateY(120px) rotateX(2deg);
-  width:min(88vw,600px); max-height:360px; overflow:auto;
-  background:var(--paper); color:var(--ink);
-  border-radius:12px; padding:28px 26px;
-  box-shadow:0 30px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(0,0,0,.06);
-  opacity:0; transition:opacity .5s ease, transform .7s cubic-bezier(.2,.8,.2,1);
-}
-.letter:focus{outline:2px dashed #8aa0ff; outline-offset:4px}
+  const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
 
-.letter__header h1{
-  font-family: Cardo, Georgia, serif;
-  font-weight:400; margin:0 0 .25rem 0; color:#0f1220;
-}
-.muted{color:var(--muted); margin:0 0 1rem 0; font-size:.95rem}
-.letter__body{line-height:1.7; font-size:1.05rem; white-space:pre-wrap; position:relative}
-.whisper{
-  opacity:0; margin-top:14px; font-style:italic; color:#555; transition: opacity .6s ease;
-}
+  let W = 0, H = 0, dpr = 1;
 
-/* Estado abierto + halo */
-.envelope.open .flap{ transform:rotateX(-165deg) }
-.envelope.open .letter{
-  opacity:1; transform:translate(-50%,-50%) translateY(-30px) rotateX(0deg);
-}
-.envelope.open .pocket{
-  box-shadow:0 18px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.08), 0 0 0 0 rgba(138,160,255,0.0);
-  animation: env-glow 800ms ease-out 1;
-}
-@keyframes env-glow{
-  0%{ box-shadow:0 18px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.08), 0 0 0 0 rgba(138,160,255,0.0); }
-  40%{ box-shadow:0 18px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.08), 0 0 60px 10px rgba(138,160,255,.18); }
-  100%{ box-shadow:0 18px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.08), 0 0 0 0 rgba(138,160,255,0.0); }
-}
+  // Estrellas
+  const DENSITY = 12000;
+  const MAX_STARS = 240;
+  const MIN_R = 0.25;
+  const MAX_R = 1.4;
+  const BASE_ALPHA = 0.35;
+  const TWINKLE_AMPL = 0.75;
+  const RENEW_PROB = 0.06;
+  let stars = [];
 
-/* Controles */
-.controls{display:flex; gap:.5rem; flex-wrap:wrap}
-.ghost-btn{
-  appearance:none; cursor:pointer; border:1px solid #d7d7d7; background:#fff; color:#111;
-  padding:.55rem .75rem; border-radius:10px; font-size:.95rem;
-  transition:background .15s ease, transform .1s ease, border-color .15s ease;
-}
-.ghost-btn:hover{background:#f7f7f7}
-.ghost-btn:active{transform:translateY(1px)}
+  // Cometa
+  let comet = null; // {x,y,vx,vy,life,max,thickness}
+  let nextCometIn = 0;
 
-/* Reduce motion */
-@media (prefers-reduced-motion: reduce){
-  .envelope{ transition:none !important; transform:none !important; }
-  .flap{ transition:none !important; }
-  .letter{ transition:none !important; }
-  .sky::before{ animation:none !important; }
-}
+  function rnd(a, b) { return Math.random() * (b - a) + a; }
+
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width  = Math.floor(rect.width  * dpr);
+    canvas.height = Math.floor(rect.height * dpr);
+    canvas.style.width  = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    W = canvas.width; H = canvas.height;
+
+    const count = Math.min(MAX_STARS, Math.max(90, Math.floor((W * H) / DENSITY)));
+    stars = Array.from({ length: count }, () => spawnStar());
+
+    scheduleNextComet();
+  }
+
+  function spawnStar(){
+    const speed = rnd(0.35, 1.1); // rad/s
+    const phase = rnd(0, Math.PI * 2);
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: rnd(MIN_R, MAX_R),
+      baseA: BASE_ALPHA,
+      ampl: TWINKLE_AMPL,
+      speed,
+      phase,
+      hue: 220 + rnd(-8, 14),
+    };
+  }
+
+  function scheduleNextComet(){
+    nextCometIn = prefersReduced ? Infinity : (8 + Math.random()*10);
+  }
+
+  function spawnComet(){
+    const margin = 80 * dpr;
+    const side = Math.floor(Math.random()*4);
+    let x, y, vx, vy;
+    const speed = (Math.random()*0.6 + 0.7) * dpr * 250; // px/s
+
+    if (side === 0){ x = Math.random() * W; y = -margin; const a = (Math.random() * Math.PI/3) + Math.PI/6; vx = Math.cos(a)*speed; vy = Math.sin(a)*speed; }
+    else if (side === 1){ x = W+margin; y = Math.random() * H; const a = Math.PI + Math.random()*(Math.PI/3) + Math.PI/6; vx = Math.cos(a)*speed; vy = Math.sin(a)*speed; }
+    else if (side === 2){ x = Math.random() * W; y = H+margin; const a = - (Math.random() * Math.PI/3 + Math.PI/6); vx = Math.cos(a)*speed; vy = Math.sin(a)*speed; }
+    else { x = -margin; y = Math.random() * H; const a = (Math.random() * Math.PI/3) - Math.PI/6; vx = Math.cos(a)*speed; vy = Math.sin(a)*speed; }
+
+    comet = { x, y, vx, vy, life:0, max: Math.random()*1.2 + 1.8, thickness: Math.random()*0.6 + 0.9 };
+  }
+
+  // Animación
+  let rafId = null;
+  let last = performance.now();
+
+  function frame(now){
+    const dt = Math.min(0.05, (now - last)/1000);
+    last = now;
+
+    ctx.clearRect(0,0,W,H);
+
+    // Estrellas
+    for (let i=0; i<stars.length; i++){
+      const s = stars[i];
+      s.phase += s.speed * dt;
+      const tw = Math.cos(s.phase) ** 2;
+      let alpha = s.baseA + s.ampl * (tw - 0.5) * 2;
+      alpha = Math.max(0, Math.min(1, alpha));
+
+      if (alpha < 0.04 && Math.random() < RENEW_PROB){
+        stars[i] = spawnStar();
+        continue;
+      }
+
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = `hsl(${s.hue} 100% 85%)`;
+      ctx.fill();
+    }
+
+    // Cometa
+    if (comet){
+      comet.life += dt;
+      comet.x += comet.vx * dt;
+      comet.y += comet.vy * dt;
+
+      const vlen = Math.hypot(comet.vx, comet.vy) || 1;
+      const trailLen = 180 * dpr;
+      const tailX = comet.x - (comet.vx / vlen) * trailLen;
+      const tailY = comet.y - (comet.vy / vlen) * trailLen;
+
+      const grad = ctx.createLinearGradient(comet.x, comet.y, tailX, tailY);
+      grad.addColorStop(0, 'rgba(255,255,255,0.85)');
+      grad.addColorStop(1, 'rgba(170,200,255,0)');
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.lineWidth = comet.thickness;
+      ctx.strokeStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(comet.x, comet.y);
+      ctx.lineTo(tailX, tailY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(230,240,255,0.85)';
+      ctx.arc(comet.x, comet.y, 1.4*dpr, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+
+      if (comet.life > comet.max ||
+          comet.x < -200*dpr || comet.x > W + 200*dpr ||
+          comet.y < -200*dpr || comet.y > H + 200*dpr){
+        comet = null;
+      }
+    } else {
+      nextCometIn -= dt;
+      if (nextCometIn <= 0){ spawnComet(); scheduleNextComet(); }
+    }
+
+    // Parallax envelope
+    curRX = lerp(curRX, targetRX, 0.08);
+    curRY = lerp(curRY, targetRY, 0.08);
+    curTZ = lerp(curTZ, targetTZ, 0.08);
+    envelope.style.transform = `translateZ(${curTZ}px) rotateX(${curRX}deg) rotateY(${curRY}deg)`;
+
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function start(){
+    if (rafId) cancelAnimationFrame(rafId);
+    last = performance.now();
+    rafId = requestAnimationFrame(frame);
+  }
+  function stop(){
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+
+  window.addEventListener('resize', ()=>{ stop(); resize(); start(); }, {passive:true});
+  resize();
+  if (!prefersReduced){ start(); }
+  else {
+    // Dibujo estático
+    ctx.clearRect(0,0,W,H);
+    for (const s of stars){
+      ctx.globalAlpha = s.baseA;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = `hsl(${s.hue} 100% 85%)`;
+      ctx.fill();
+    }
+  }
+  document.addEventListener('visibilitychange', ()=>{ if (document.hidden) stop(); else start(); });
+})();
+
+/* ================== PARALLAX (mouse + gyro) ================== */
+const MAX_ROT_X = 6;  // grados
+const MAX_ROT_Y = 8;  // grados
+const MAX_TZ = 14;    // px "pop"
+let targetRX = 0, targetRY = 0, targetTZ = 0;
+let curRX = 0, curRY = 0, curTZ = 0;
+
+function lerp(a,b,t){ return a + (b-a)*t; }
+
+(function(){
+  const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+  if (prefersReduced) return;
+
+  window.addEventListener('mousemove', (e)=>{
+    const rect = envelope.getBoundingClientRect();
+    const cx = rect.left + rect.width/2;
+    const cy = rect.top + rect.height/2;
+    const nx = (e.clientX - cx) / (rect.width/2);   // -1..1
+    const ny = (e.clientY - cy) / (rect.height/2);  // -1..1
+    targetRY = -nx * MAX_ROT_Y;
+    targetRX =  ny * MAX_ROT_X;
+    targetTZ = (1 - Math.min(1, Math.hypot(nx,ny))) * MAX_TZ;
+  }, {passive:true});
+
+  if (window.DeviceOrientationEvent){
+    window.addEventListener('deviceorientation', (ev)=>{
+      if (typeof ev.beta === 'number' && typeof ev.gamma === 'number'){
+        const nx = Math.max(-1, Math.min(1, (ev.gamma || 0) / 45));
+        const ny = Math.max(-1, Math.min(1, (ev.beta  || 0) / 45));
+        targetRY = -nx * MAX_ROT_Y;
+        targetRX =  ny * MAX_ROT_X;
+        targetTZ = (1 - Math.min(1, Math.hypot(nx,ny))) * MAX_TZ;
+      }
+    }, {passive:true});
+  }
+})();
